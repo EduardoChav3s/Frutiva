@@ -74,3 +74,4 @@ export async function buscarPedidos() {
     console.log('Erro ao buscar pedidos:', error);
     return [];
   }
+}
