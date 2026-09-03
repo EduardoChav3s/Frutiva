@@ -1,75 +1,147 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  Alert
+} from 'react-native';
 
-export default function FrutaCard({ fruta, onAdicionar }) {
+import FrutaCard from '../components/FrutaCard';
+import { buscarCarrinho, salvarCarrinho } from '../services/storage';
+
+const FRUTAS = [
+  {
+    id: '1',
+    nome: 'Maçã Fuji',
+    preco: 4.50,
+    imagem: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400'
+  },
+  {
+    id: '2',
+    nome: 'Banana Prata',
+    preco: 6.00,
+    imagem: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400'
+  },
+  {
+    id: '3',
+    nome: 'Morango Orgânico',
+    preco: 12.90,
+    imagem: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400'
+  },
+  {
+    id: '4',
+    nome: 'Laranja Pera',
+    preco: 5.20,
+    imagem: 'https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=400'
+  },
+  {
+    id: '5',
+    nome: 'Abacaxi Pérola',
+    preco: 8.90,
+    imagem: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=400'
+  },
+  {
+    id: '6',
+    nome: 'Uva Niágara',
+    preco: 9.50,
+    imagem: 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400'
+  }
+];
+
+export default function HomeScreen({ navigation }) {
+  const [qtdCarrinho, setQtdCarrinho] = useState(0);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      atualizarQtdCarrinho();
+    });
+
+    atualizarQtdCarrinho();
+
+    return unsubscribe;
+  }, [navigation]);
+
+  async function atualizarQtdCarrinho() {
+    const carrinho = await buscarCarrinho();
+    setQtdCarrinho(carrinho.length);
+  }
+
+  async function adicionarAoCarrinho(fruta) {
+    const carrinhoAtual = await buscarCarrinho();
+    
+    // Gera ID único para o item no carrinho para permitir remover itens individuais
+    const itemComIdUnico = {
+      ...fruta,
+      id: `${fruta.id}-${Date.now()}`
+    };
+
+    const novoCarrinho = [...carrinhoAtual, itemComIdUnico];
+    await salvarCarrinho(novoCarrinho);
+    setQtdCarrinho(novoCarrinho.length);
+    Alert.alert('Sucesso', `${fruta.nome} foi adicionado ao carrinho!`);
+  }
+
   return (
-    <View style={styles.card}>
-
-      <Image
-        source={{ uri: fruta.imagem }}
-        style={styles.imagem}
-      />
-
-      <View style={styles.info}>
-        <Text style={styles.nome}>{fruta.nome}</Text>
-
-        <Text style={styles.preco}>
-          R$ {fruta.preco.toFixed(2)}
-        </Text>
-
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.subtitulo}>Frutas Frescas & Orgânicas</Text>
+        
         <TouchableOpacity
-          style={styles.botao}
-          onPress={() => onAdicionar(fruta)}
+          style={styles.botaoCarrinho}
+          onPress={() => navigation.navigate('Carrinho')}
         >
-          <Text style={styles.textoBotao}>
-            Adicionar ao carrinho
+          <Text style={styles.textoBotaoCarrinho}>
+            🛒 Carrinho ({qtdCarrinho})
           </Text>
         </TouchableOpacity>
       </View>
 
+      <FlatList
+        data={FRUTAS}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <FrutaCard
+            fruta={item}
+            onAdicionar={adicionarAoCarrinho}
+          />
+        )}
+        contentContainerStyle={styles.lista}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 15,
-    elevation: 3,
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    padding: 15,
   },
-
-  imagem: {
-    width: '100%',
-    height: 150,
-    borderRadius: 8,
-  },
-
-  info: {
-    marginTop: 10,
-  },
-
-  nome: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-
-  preco: {
-    fontSize: 16,
-    marginTop: 5,
-  },
-
-  botao: {
-    marginTop: 10,
-    padding: 10,
-    borderRadius: 8,
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#4CAF50',
+    marginBottom: 15,
   },
-
-  textoBotao: {
+  subtitulo: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#555',
+  },
+  botaoCarrinho: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  textoBotaoCarrinho: {
     color: '#fff',
     fontWeight: 'bold',
+    fontSize: 14,
+  },
+  lista: {
+    paddingBottom: 20,
   },
 });

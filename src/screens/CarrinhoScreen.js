@@ -7,6 +7,7 @@ import {
   StyleSheet
 } from 'react-native';
 
+import CarrinhoItem from '../components/CarrinhoItem';
 import {
   buscarCarrinho,
   salvarCarrinho,
@@ -19,8 +20,14 @@ export default function CarrinhoScreen({ navigation }) {
   const [carrinho, setCarrinho] = useState([]);
 
   useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      carregarCarrinho();
+    });
+
     carregarCarrinho();
-  }, []);
+
+    return unsubscribe;
+  }, [navigation]);
 
   async function carregarCarrinho() {
     const dados = await buscarCarrinho();
@@ -70,32 +77,6 @@ export default function CarrinhoScreen({ navigation }) {
     navigation.navigate('Pedido');
   }
 
-  function renderItem({ item }) {
-    return (
-      <View style={styles.item}>
-
-        <View>
-          <Text style={styles.nome}>
-            {item.nome}
-          </Text>
-
-          <Text>
-            R$ {item.preco.toFixed(2)}
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          onPress={() => removerFruta(item.id)}
-        >
-          <Text style={styles.remover}>
-            Remover
-          </Text>
-        </TouchableOpacity>
-
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
 
@@ -115,7 +96,12 @@ export default function CarrinhoScreen({ navigation }) {
           <FlatList
             data={carrinho}
             keyExtractor={item => item.id.toString()}
-            renderItem={renderItem}
+            renderItem={({ item }) => (
+              <CarrinhoItem
+                fruta={item}
+                onRemover={removerFruta}
+              />
+            )}
           />
 
           <View style={styles.resumo}>
